@@ -1,0 +1,9 @@
+{
+  "name": "bilibili-ranking",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "start": "vercel dev" // 本地测试命令（可选）
+  }
+}

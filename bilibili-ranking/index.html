@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站每日排行榜数据可视化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FB7299', // B站粉色
+                        secondary: '#23ADE5', // B站蓝色
+                        dark: '#18191C',
+                        light: '#F5F5F7',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .gradient-bg {
+                @apply bg-gradient-to-br from-primary/10 to-secondary/10;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all shadow hover:shadow-md;
+            }
+            .btn-secondary {
+                @apply bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-all;
+            }
+            .btn-icon {
+                @apply flex items-center justify-center w-10 h-10 rounded-full transition-all;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 min-h-screen">
+    <!-- 导航栏 -->
+    <header class="sticky top-0 z-50 bg-white shadow-md transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-play-circle text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">B站每日排行榜</h1>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#today" class="hover:text-primary transition-colors">今日排行</a>
+                <a href="#history" class="hover:text-primary transition-colors">历史记录</a>
+                <a href="#statistics" class="hover:text-primary transition-colors">数据统计</a>
+                <a href="#settings" class="hover:text-primary transition-colors">设置</a>
+            </nav>
+            
+            <button class="md:hidden text-gray-600 focus:outline-none btn-icon hover:bg-gray-100" id="mobile-menu-button">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div class="md:hidden hidden bg-white border-t" id="mobile-menu">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+                <a href="#today" class="py-2 hover:text-primary transition-colors">今日排行</a>
+                <a href="#history" class="py-2 hover:text-primary transition-colors">历史记录</a>
+                <a href="#statistics" class="py-2 hover:text-primary transition-colors">数据统计</a>
+                <a href="#settings" class="py-2 hover:text-primary transition-colors">设置</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- 今日排行部分 -->
+        <section id="today" class="mb-16">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                <div>
+                    <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-2">今日排行榜</h2>
+                    <p class="text-gray-500" id="current-date">2023年6月15日 00:00 更新</p>
+                </div>
+                <button class="mt-4 md:mt-0 btn-primary flex items-center space-x-2" id="refresh-today">
+                    <i class="fa fa-refresh"></i>
+                    <span>刷新数据</span>
+                </button>
+            </div>
+            
+            <!-- 排行榜卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 第1名 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover border-l-4 border-primary col-span-1 md:col-span-2 lg:col-span-1">
+                    <div class="relative">
+                        <div class="absolute top-4 left-4 bg-primary text-white text-2xl font-bold w-10 h-10 rounded-full flex items-center justify-center shadow-lg z-10">1</div>
+                        <img src="https://picsum.photos/600/338?random=1" alt="排行榜第一的视频封面" class="w-full h-48 object-cover">
+                        <div class="absolute bottom-4 right-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                            <i class="fa fa-eye mr-1"></i> 256.3万
+                        </div>
+                        <button class="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white btn-icon z-10">
+                            <i class="fa fa-star-o"></i>
+                        </button>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="font-bold text-lg mb-2 line-clamp-2">【年度巨制】B站2023年度回顾：那些感动我们的瞬间</h3>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">年度回顾</span>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">官方</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://picsum.photos/100/100?random=101" alt="UP主头像" class="w-8 h-8 rounded-full object-cover">
+                                <span class="text-gray-600">哔哩哔哩官方</span>
+                            </div>
+                            <a href="#" target="_blank" class="btn-primary flex items-center text-sm px-3 py-1">
+                                <span>查看</span>
+                                <i class="fa fa-angle-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 第2名至第5名结构类似，增加了标签和收藏按钮 -->
+                <!-- 第2名 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover border-l-4 border-gray-200">
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 bg-gray-200 text-gray-800 text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md z-10">2</div>
+                        <img src="https://picsum.photos/600/338?random=2" alt="排行榜第二的视频封面" class="w-full h-36 object-cover">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center">
+                            <i class="fa fa-eye mr-1"></i> 189.7万
+                        </div>
+                        <button class="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white btn-icon w-8 h-8 z-10">
+                            <i class="fa fa-star-o text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-base mb-2 line-clamp-2">最新科技评测：这款产品真的值得买吗？</h3>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">科技</span>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">评测</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://picsum.photos/100/100?random=102" alt="UP主头像" class="w-6 h-6 rounded-full object-cover">
+                                <span class="text-gray-600 text-sm">科技美学</span>
+                            </div>
+                            <a href="#" target="_blank" class="btn-primary flex items-center text-sm px-3 py-1">
+                                <span>查看</span>
+                                <i class="fa fa-angle-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 第3名 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover border-l-4 border-amber-600">
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 bg-amber-600 text-white text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md z-10">3</div>
+                        <img src="https://picsum.photos/600/338?random=3" alt="排行榜第三的视频封面" class="w-full h-36 object-cover">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center">
+                            <i class="fa fa-eye mr-1"></i> 156.2万
+                        </div>
+                        <button class="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white btn-icon w-8 h-8 z-10">
+                            <i class="fa fa-star-o text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-base mb-2 line-clamp-2">自制美食：在家也能做出米其林级别的料理</h3>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">美食</span>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">教程</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://picsum.photos/100/100?random=103" alt="UP主头像" class="w-6 h-6 rounded-full object-cover">
+                                <span class="text-gray-600 text-sm">美食家老王</span>
+                            </div>
+                            <a href="#" target="_blank" class="btn-primary flex items-center text-sm px-3 py-1">
+                                <span>查看</span>
+                                <i class="fa fa-angle-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 第4名 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover border-l-4 border-gray-500">
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 bg-gray-500 text-white text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md z-10">4</div>
+                        <img src="https://picsum.photos/600/338?random=4" alt="排行榜第四的视频封面" class="w-full h-36 object-cover">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center">
+                            <i class="fa fa-eye mr-1"></i> 132.8万
+                        </div>
+                        <button class="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white btn-icon w-8 h-8 z-10">
+                            <i class="fa fa-star-o text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-base mb-2 line-clamp-2">游戏攻略：如何快速通关最新DLC</h3>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">游戏</span>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">攻略</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://picsum.photos/100/100?random=104" alt="UP主头像" class="w-6 h-6 rounded-full object-cover">
+                                <span class="text-gray-600 text-sm">游戏达人</span>
+                            </div>
+                            <a href="#" target="_blank" class="btn-primary flex items-center text-sm px-3 py-1">
+                                <span>查看</span>
+                                <i class="fa fa-angle-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 第5名 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden card-hover border-l-4 border-gray-500">
+                    <div class="relative">
+                        <div class="absolute top-3 left-3 bg-gray-500 text-white text-xl font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-md z-10">5</div>
+                        <img src="https://picsum.photos/600/338?random=5" alt="排行榜第五的视频封面" class="w-full h-36 object-cover">
+                        <div class="absolute bottom-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center">
+                            <i class="fa fa-eye mr-1"></i> 110.5万
+                        </div>
+                        <button class="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white btn-icon w-8 h-8 z-10">
+                            <i class="fa fa-star-o text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-base mb-2 line-clamp-2">旅行Vlog：探秘世界上最神秘的角落</h3>
+                        <div class="flex flex-wrap gap-1 mb-2">
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">旅行</span>
+                            <span class="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">Vlog</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://picsum.photos/100/100?random=105" alt="UP主头像" class="w-6 h-6 rounded-full object-cover">
+                                <span class="text-gray-600 text-sm">环球旅行者</span>
+                            </div>
+                            <a href="#" target="_blank" class="btn-primary flex items-center text-sm px-3 py-1">
+                                <span>查看</span>
+                                <i class="fa fa-angle-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 更多排行按钮 -->
+            <div class="mt-8 text-center">
+                <button class="btn-secondary flex items-center mx-auto px-6">
+                    <span>查看更多排行</span>
+                    <i class="fa fa-chevron-down ml-2"></i>
+                </button>
+            </div>
+        </section>
+        
+        <!-- 历史记录部分 -->
+        <section id="history" class="mb-16">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-6">历史记录</h2>
+            
+            <!-- 日期选择器和搜索 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <h3 class="text-lg font-semibold mb-4 md:mb-0">选择日期查看历史排行</h3>
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                        <button class="bg-primary text-white px-4 py-2 rounded-full text-sm">今天</button>
+                        <button class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm transition-colors">昨天</button>
+                        <button class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm transition-colors">本周</button>
+                        <button class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm transition-colors">本月</button>
+                        <input type="date" class="border border-gray-300 rounded-full px-4 py-2 text-sm">
+                    </div>
+                </div>
+                
+                <!-- 搜索和筛选 -->
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <input type="text" placeholder="搜索视频标题或UP主..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+                        <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <select class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+                            <option>所有分类</option>
+                            <option>动画</option>
+                            <option>音乐</option>
+                            <option>游戏</option>
+                            <option>知识</option>
+                            <option>科技</option>
+                        </select>
+                        <button class="btn-primary">搜索</button>
+                        <button class="btn-secondary">重置</button>
+                    </div>
+                </div>
+                
+                <!-- 历史记录表格 -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">排名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">视频标题</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UP主</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">播放量</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-14</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-primary">1</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">人工智能如何改变我们的生活</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">科技前沿</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">320.5万</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-primary/80 transition-colors mr-3">查看详情</button>
+                                    <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                                        <i class="fa fa-star-o"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-14</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">2</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">周末探店：隐藏在巷子里的美味</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">吃货小分队</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">210.8万</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-primary/80 transition-colors mr-3">查看详情</button>
+                                    <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                                        <i class="fa fa-star-o"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-13</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary/10 text-primary">1</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">最新电影深度解析</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">影评人小明</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">450.2万</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button class="text-primary hover:text-primary/80 transition-colors mr-3">查看详情</button>
+                                    <button class="text-gray-500 hover:text-gray-700 transition-colors">
+                                        <i class="fa fa-star-o"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页 -->
+                <div class="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+                    <p class="text-sm text-gray-500">显示 1 到 3 条，共 42 条记录</p>
+                    <div class="flex space-x-1">
+                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50 disabled:opacity-50" disabled>
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <button class="px-3 py-1 border border-primary bg-primary text-white rounded-md text-sm">1</button>
+                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50">2</button>
+                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50">3</button>
+                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 数据统计部分 -->
+        <section id="statistics" class="mb-16">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-6">数据统计</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- 播放量趋势图 -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">每日TOP1播放量趋势</h3>
+                        <div class="flex space-x-2">
+                            <button class="btn-secondary text-sm px-3 py-1">周</button>
+                            <button class="btn-secondary text-sm px-3 py-1 bg-gray-300">月</button>
+                            <button class="btn-secondary text-sm px-3 py-1">年</button>
+                        </div>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="viewsChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- UP主上榜次数统计 -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">UP主上榜次数TOP5</h3>
+                        <button class="btn-secondary text-sm px-3 py-1 flex items-center">
+                            <i class="fa fa-download mr-1"></i> 导出
+                        </button>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="upChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl shadow-md p-6 gradient-bg card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-600 font-medium">总记录天数</h3>
+                        <i class="fa fa-calendar text-primary text-2xl"></i>
+                    </div>
+                    <p class="text-3xl font-bold">36天</p>
+                    <p class="text-green-500 text-sm flex items-center mt-2">
+                        <i class="fa fa-arrow-up mr-1"></i> 较上周 +5天
+                    </p>
+                    <button class="mt-4 text-primary text-sm hover:underline flex items-center">
+                        <span>查看详情</span>
+                        <i class="fa fa-angle-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6 gradient-bg card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-600 font-medium">累计视频数</h3>
+                        <i class="fa fa-film text-primary text-2xl"></i>
+                    </div>
+                    <p class="text-3xl font-bold">180个</p>
+                    <p class="text-green-500 text-sm flex items-center mt-2">
+                        <i class="fa fa-arrow-up mr-1"></i> 较上周 +25个
+                    </p>
+                    <button class="mt-4 text-primary text-sm hover:underline flex items-center">
+                        <span>查看详情</span>
+                        <i class="fa fa-angle-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6 gradient-bg card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-600 font-medium">总播放量</h3>
+                        <i class="fa fa-eye text-primary text-2xl"></i>
+                    </div>
+                    <p class="text-3xl font-bold">4.2亿</p>
+                    <p class="text-green-500 text-sm flex items-center mt-2">
+                        <i class="fa fa-arrow-up mr-1"></i> 较上周 +12%
+                    </p>
+                    <button class="mt-4 text-primary text-sm hover:underline flex items-center">
+                        <span>查看详情</span>
+                        <i class="fa fa-angle-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-md p-6 gradient-bg card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-gray-600 font-medium">活跃UP主</h3>
+                        <i class="fa fa-users text-primary text-2xl"></i>
+                    </div>
+                    <p class="text-3xl font-bold">42位</p>
+                    <p class="text-red-500 text-sm flex items-center mt-2">
+                        <i class="fa fa-arrow-down mr-1"></i> 较上周 -3位
+                    </p>
+                    <button class="mt-4 text-primary text-sm hover:underline flex items-center">
+                        <span>查看详情</span>
+                        <i class="fa fa-angle-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 设置部分 -->
+        <section id="settings" class="mb-16">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-6">设置</h2>
+            
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-6">数据获取设置</h3>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">B站 Cookie 设置</label>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <textarea class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors" rows="4" placeholder="请输入您的B站Cookie以获取排行榜数据...">uuid=101AD2D3C-E2E8-51010E-C8E4-4FC8A21054D4336943infoc; buvid_fp=0d104c03eb843dec15166537b906bf63; enable_web_push=disable; hit-dyn-v2=1; rpdid=|(ummYY)uY)k0J'u~JmYYYm|R; buvid3=9B0EB53C-8757-47D1-A459-9204374F6EDD71441infoc; b_nut=1740217475; LIVE_BUVID=AUTO3517402275643674; CURRENT_BLACKGAP=0; enable_feed_channel=ENABLE; theme-tip-show=SHOWED; theme-avatar-tip-show=SHOWED; theme-switch-show=SHOWED; fingerprint=993b5b4ee4a2ab8be623c543f5fab883; SESSDATA=b4bbae73%2C1766023422%2C1eb91%2A62CjDHJ1Zo8rrwWc6B_XNLg46eM5VuVSu-GSsj2MMaZqxOkISWuJP5ol1Bzd8nWW0BpBASVms0cUZVVWlUeENfYWJJQWNtQmNQQ0RfSFZRRHhEaFJzLVJkQlRMNjMyTmpDMXZHSUQtS0F3XzRxQTU1a0NvdFRiX05ZQ2lZRWZmZG0zRm16ZXh4bmtRIIEC; bili_jct=75322457edebae85a1a8bedf0b5e9070; DedeUserID=660591690; DedeUserID__ckMd5=618206d5e24c85b2; header_theme_version=OPEN; theme_style=light; buvid4=9595A8F8-8164-9228-CEA2-6CAC106FFF4337722-025021523-KHhZxTyr6Wq2tHQBn/WcDQ%3D%3D; PVID=3; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTkyNjg2OTksImlhdCI6MTc1OTAwOTQzOSwicGx0IjotMX0.WPHuWMc8TRNhUCNj7gbnxBc7TvfyhRF70u20VcAh-Wg; bili_ticket_expires=1759268639; CURRENT_QUALITY=120; bp_t_offset_660591690=1118414822522748928; b_lsid=A6AA2A36_1999B350895; bmg_af_switch=1; bmg_src_def_domain=i1.hdslb.com; sid=4yhyau1r; CURRENT_FNVAL=4048; home_feed_column=4; browser_resolution=738-834</textarea>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Cookie用于获取B站排行榜数据，我们不会存储您的账号信息。</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">自动更新设置</label>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="auto-update" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" checked>
+                            <label for="auto-update" class="ml-2 block text-sm text-gray-700">每天0点自动更新排行榜数据</label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">数据存储期限</label>
+                        <select class="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors">
+                            <option>永久保存</option>
+                            <option>保存30天</option>
+                            <option>保存90天</option>
+                            <option>保存180天</option>
+                            <option>保存365天</option>
+                        </select>
+                    </div>
+                    
+                    <div class="pt-4 flex flex-wrap gap-4">
+                        <button class="btn-primary" id="save-settings">
+                            保存设置
+                        </button>
+                        <button class="btn-secondary" id="test-connection">
+                            测试连接
+                        </button>
+                        <button class="btn-secondary">
+                            <i class="fa fa-refresh mr-1"></i> 刷新Cookie
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 通知提示框 -->
+    <div id="notification" class="fixed bottom-6 right-6 bg-dark text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center">
+        <i class="fa fa-check-circle text-green-400 mr-2"></i>
+        <span id="notification-text">操作成功</span>
+    </div>
+    
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <i class="fa fa-play-circle text-primary text-2xl"></i>
+                        <h2 class="text-xl font-bold">B站每日排行榜</h2>
+                    </div>
+                    <p class="text-gray-400 mb-4">记录B站每日0点排行榜前5的视频数据，包括视频播放量和UP主信息，方便您追踪热门内容趋势。</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors btn-icon w-10 h-10">
+                            <i class="fa fa-github"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors btn-icon w-10 h-10">
+                            <i class="fa fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors btn-icon w-10 h-10">
+                            <i class="fa fa-bilibili"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">快速链接</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#today" class="text-gray-400 hover:text-white transition-colors">今日排行</a></li>
+                        <li><a href="#history" class="text-gray-400 hover:text-white transition-colors">历史记录</a></li>
+                        <li><a href="#statistics" class="text-gray-400 hover:text-white transition-colors">数据统计</a></li>
+                        <li><a href="#settings" class="text-gray-400 hover:text-white transition-colors">设置</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">关于</h3>
+                    <p class="text-gray-400 mb-2">本网站仅用于学习和研究目的，所有数据来源于B站公开信息。</p>
+                    <p class="text-gray-400">© 2023 B站每日排行榜. 保留所有权利。</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // 移动端菜单切换
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 设置当前日期
+        const today = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = `${today.toLocaleDateString('zh-CN', options)} 00:00 更新`;
+        
+        // 播放量趋势图
+        const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+        const viewsChart = new Chart(viewsCtx, {
+            type: 'line',
+            data: {
+                labels: ['6/1', '6/5', '6/10', '6/15', '6/20', '6/25', '6/30'],
+                datasets: [{
+                    label: 'TOP1 播放量 (万)',
+                    data: [210, 180, 320, 256, 280, 350, 290],
+                    borderColor: '#FB7299',
+                    backgroundColor: 'rgba(251, 114, 153, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // UP主上榜次数统计
+        const upCtx = document.getElementById('upChart').getContext('2d');
+        const upChart = new Chart(upCtx, {
+            type: 'bar',
+            data: {
+                labels: ['科技美学', '哔哩哔哩官方', '美食家老王', '游戏达人', '环球旅行者'],
+                datasets: [{
+                    label: '上榜次数',
+                    data: [8, 6, 5, 4, 3],
+                    backgroundColor: [
+                        'rgba(251, 114, 153, 0.7)',
+                        'rgba(35, 173, 229, 0.7)',
+                        'rgba(250, 173, 20, 0.7)',
+                        'rgba(76, 175, 80, 0.7)',
+                        'rgba(156, 39, 176, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 滚动时导航栏效果
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('py-2', 'shadow-lg');
+                header.classList.remove('py-3', 'shadow-md');
+            } else {
+                header.classList.add('py-3', 'shadow-md');
+                header.classList.remove('py-2', 'shadow-lg');
+            }
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 关闭移动菜单
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }
+            });
+        });
+        
+        // 通知提示功能
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            notification.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-y-0', 'opacity-100');
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // 按钮功能实现
+        document.getElementById('refresh-today').addEventListener('click', function() {
+            // 模拟刷新数据
+            this.innerHTML = '<i class="fa fa-spinner fa-spin"></i><span>刷新中...</span>';
+            
+            setTimeout(() => {
+                this.innerHTML = '<i class="fa fa-refresh"></i><span>刷新数据</span>';
+                showNotification('数据已更新至最新');
+            }, 1500);
+        });
+        
+        document.getElementById('save-settings').addEventListener('click', function() {
+            showNotification('设置已保存');
+        });
+        
+        document.getElementById('test-connection').addEventListener('click', function() {
+            this.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> 测试中...';
+            
+            setTimeout(() => {
+                this.innerHTML = '测试连接';
+                showNotification('连接成功，Cookie有效');
+            }, 1500);
+        });
+        
+        // 收藏按钮功能
+        document.querySelectorAll('.fa-star-o').forEach(star => {
+            star.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (this.classList.contains('fa-star-o')) {
+                    this.classList.remove('fa-star-o');
+                    this.classList.add('fa-star');
+                    this.parentElement.classList.add('text-yellow-400');
+                    showNotification('已收藏');
+                } else {
+                    this.classList.remove('fa-star');
+                    this.classList.add('fa-star-o');
+                    this.parentElement.classList.remove('text-yellow-400');
+                    showNotification('已取消收藏');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
