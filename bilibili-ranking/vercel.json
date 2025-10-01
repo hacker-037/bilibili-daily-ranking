@@ -1,11 +1,5 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" } // 确保后端接口能被访问
-  ],
-  "functions": {
-    "api/*.js": {
-      "memory": 128,
-      "maxDuration": 10 // 接口超时时间（10秒足够爬取数据）
-    }
-  }
+    { "source": "/api/:path*", "destination": "/api/:path*" }
+  ]
 }
