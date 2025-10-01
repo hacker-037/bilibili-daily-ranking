@@ -4,6 +4,7 @@
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "start": "vercel dev" // 本地测试命令（可选）
+    "start": "vercel dev"
   }
+
 }
